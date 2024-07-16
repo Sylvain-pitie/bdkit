@@ -56,6 +56,14 @@ Where TDOS.dat contain the full DOS, PDOS_K.dat contain the projected DOS of the
 
 Then we use these files to plot the BAND-DOS plot. For that one can use the script bdkit.
 
+First to install the bdkit, you have to download all the files and put bdkit in your path.
+
+Then open bdkit and add the path of your python3 binary (which python3).
+
+Then you can use it: 
+
+bdkit -h
+
 usage: BDkit1.0 [-h] [-t TITLE] [-lf LABELFIG] [-yl YLEGEND] [-emin EMIN] [-emax EMAX] [-dpi DPI]
 
                 kindatm typeatm typeorb colors
