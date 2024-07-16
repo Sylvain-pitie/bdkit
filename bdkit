@@ -1,0 +1,46 @@
+#!xxxxx
+import sys
+import os
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+from matplotlib import gridspec  # Importez gridspec
+from band1 import band1
+from band2 import band2
+from band3 import band3
+from band4 import band4
+import argparse
+parser = argparse.ArgumentParser(prog='BDkit1.0')
+parser.add_argument("kindatm", type=int, help="number of the different elements in your compound")
+parser.add_argument("typeatm", type=str, help="name of the elements in this way 'N,O'")
+parser.add_argument("typeorb", type=str, help="label of the orbitals in this way 's,p;d")
+parser.add_argument("colors", type=str, help="color of the orbitals, same lenght as the typeorb, 'blue,red;green'")
+parser.add_argument("-t", "--title", type=str, default="", help="title of the figure")
+parser.add_argument("-lf", "--labelfig", type=str, default="", help="label of the figure")
+parser.add_argument("-yl", "--ylegend", type=float, default=0.95, help="y position of the legend")
+parser.add_argument("-emin", "--emin", type=float, default=-8.0, help="minimum energie")
+parser.add_argument("-emax", "--emax", type=float, default=6.0, help="maximum energie")
+parser.add_argument("-dpi", "--dpi", type=int, default=600, help="value of the image dpi")
+args = parser.parse_args()
+
+typeorb=[]
+colors=[]
+typeatm=list(args.typeatm.split(','))
+tmporb=list(args.typeorb.split(';'))
+for orbs in tmporb:
+    typeorb.append(list(orbs.split(',')))
+tmpcolor=list(args.colors.split(';'))
+for color in tmpcolor:
+    colors.append(list(color.split(',')))
+
+if args.kindatm == 1:
+    band1(args.kindatm,typeatm[0],typeorb[0],colors[0],args.title,args.labelfig,args.ylegend,args.emin,args.emax,args.dpi)
+
+if args.kindatm == 2:
+    band2(args.kindatm,typeatm[0],typeatm[1],typeorb[0],typeorb[1],colors[0],colors[1],args.title,args.labelfig,args.ylegend,args.emin,args.emax,args.dpi)
+
+if args.kindatm == 3:
+        band3(args.kindatm,typeatm[0],typeatm[1],typeatm[2],typeorb[0],typeorb[1],typeorb[2],colors[0],colors[1],colors[2],args.title,args.labelfig,args.ylegend,args.emin,args.emax,args.dpi)
+
+if args.kindatm == 4:
+            band4(args.kindatm,typeatm[0],typeatm[1],typeatm[2],typeatm[3],typeorb[0],typeorb[1],typeorb[2],typeorb[3],colors[0],colors[1],colors[2],colors[3],args.title,args.labelfig,args.ylegend,args.emin,args.emax,args.dpi)
