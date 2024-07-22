@@ -39,13 +39,13 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
     # Convertissez les données en listes
     raw1 = donnees["Colonne1"].tolist()
     raw2 = donnees["Colonne2"].tolist()
-    donnees["Colonne3"] = donnees["Colonne3"] * size
+    donnees["Colonne3"] = donnees["Colonne3"] * 10
     raws1 = donnees["Colonne3"].tolist()
     donnees["Somme"] = donnees["Colonne4"] + donnees["Colonne5"] + donnees["Colonne6"]
-    donnees["Somme"] = donnees["Somme"] * size
+    donnees["Somme"] = donnees["Somme"] * 10
     rawp1 = donnees["Somme"].tolist()
     donnees["Sommed"] = donnees["Colonne7"] + donnees["Colonne8"] + donnees["Colonne9"] + donnees["Colonne10"] + donnees["Colonne11"]
-    donnees["Sommed"] = donnees["Sommed"] * size
+    donnees["Sommed"] = donnees["Sommed"] * 10
     rawd1 = donnees["Sommed"].tolist()
 #########Lecture de la structure de bandes projeté sur N###########################
 # Définissez le nom de votre fichier
@@ -62,13 +62,13 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
     # Convertissez les données en listes
     raw1 = donnees["Colonne1"].tolist()
     raw2 = donnees["Colonne2"].tolist()
-    donnees["Colonne3"] = donnees["Colonne3"] * size
+    donnees["Colonne3"] = donnees["Colonne3"] * 10
     raws2 = donnees["Colonne3"].tolist()
     donnees["Somme"] = donnees["Colonne4"] + donnees["Colonne5"] + donnees["Colonne6"]
-    donnees["Somme"] = donnees["Somme"] * size
+    donnees["Somme"] = donnees["Somme"] * 10
     rawp2 = donnees["Somme"].tolist()
     donnees["Sommed"] = donnees["Colonne7"] + donnees["Colonne8"] + donnees["Colonne9"] + donnees["Colonne10"] + donnees["Colonne11"]
-    donnees["Sommed"] = donnees["Sommed"] * size
+    donnees["Sommed"] = donnees["Sommed"] * 10
     rawd2 = donnees["Sommed"].tolist()
 #########Lecture de la structure de bandes projeté sur N###########################
 # Définissez le nom de votre fichier
@@ -85,13 +85,13 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
     # Convertissez les données en listes
     raw1 = donnees["Colonne1"].tolist()
     raw2 = donnees["Colonne2"].tolist()
-    donnees["Colonne3"] = donnees["Colonne3"] * size
+    donnees["Colonne3"] = donnees["Colonne3"] * 10
     raws3 = donnees["Colonne3"].tolist()
     donnees["Somme"] = donnees["Colonne4"] + donnees["Colonne5"] + donnees["Colonne6"]
-    donnees["Somme"] = donnees["Somme"] * size
+    donnees["Somme"] = donnees["Somme"] * 10
     rawp3 = donnees["Somme"].tolist()
     donnees["Sommed"] = donnees["Colonne7"] + donnees["Colonne8"] + donnees["Colonne9"] + donnees["Colonne10"] + donnees["Colonne11"]
-    donnees["Sommed"] = donnees["Sommed"] * size
+    donnees["Sommed"] = donnees["Sommed"] * 10
     rawd3 = donnees["Sommed"].tolist()
 
 
@@ -129,6 +129,8 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
     etiquettes = [label.replace("_2", "$_2$") for label in etiquettes]
     etiquettes = [label.replace("_0", "$_0$") for label in etiquettes]
     etiquettes = [label.replace("_1", "$_1$") for label in etiquettes]
+    etiquettes = [label.replace("+", "  ") for label in etiquettes]
+    etiquettes = [label.replace("-", "  ") for label in etiquettes]
     etiquettes = [label.replace("SIGMA", "$\Sigma$") for label in etiquettes]
 ###########Lecture des datas nécessaires au tracés des bandes######################
 ###############Lecture de la structures de bandes totales##########################
