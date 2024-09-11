@@ -64,43 +64,62 @@ Then you can use it:
 
 bdkit -h
 
-usage: BDkit1.0 [-h] [-t TITLE] [-lf LABELFIG] [-yl YLEGEND] [-emin EMIN] [-emax EMAX] [-dpi DPI]
+usage: BDkit1.0 [-h] [-t TITLE] [-lf LABELFIG] [-xl XLEGEND] [-yl YLEGEND] [-fsize FONTSIZE]
 
+                [-xrot XROTATION] [-emin EMIN] [-emax EMAX] [-dpi DPI]
+                
                 kindatm typeatm typeorb colors
 
 positional arguments:
 
   kindatm               number of the different elements in your compound
- 
+  
   typeatm               name of the elements in this way 'N,O'
   
   typeorb               label of the orbitals in this way 's,p;d
   
   colors                color of the orbitals, same lenght as the typeorb, 'blue,red;green'
+  
 
 optional arguments:
-  
+
   -h, --help            show this help message and exit
   
   -t TITLE, --title TITLE
-                        title of the figure
   
+                        title of the figure, default nothing
+                        
   -lf LABELFIG, --labelfig LABELFIG
-                        label of the figure
   
+                        label of the figure, default nothing
+                        
+  -xl XLEGEND, --xlegend XLEGEND
+  
+                        x position of the legend, default 1.1
+                        
   -yl YLEGEND, --ylegend YLEGEND
-                        y position of the legend
   
-  -emin EMIN, --emin EMIN
-                        minimum energie
-  
-  -emax EMAX, --emax EMAX
-                        maximum energie
-  
-  -dpi DPI, --dpi DPI   value of the image dpi
+                        y position of the legend, default 0.95
+                        
+  -fsize FONTSIZE, --fontsize FONTSIZE
 
+                        font size, default 19
+                        
+  -xrot XROTATION, --xrotation XROTATION
   
-  Example for a calculation of a compound with Pb and N atoms:
+                        rotation of the k-path, default 0
+                        
+  -emin EMIN, --emin EMIN
   
-  bdkit 2 "N,Pb" "p;s,p" "green;blue,red"
+                        minimum energie, default -8.0
+                        
+  -emax EMAX, --emax EMAX
+  
+                        maximum energie, default 6.0
+                        
+  -dpi DPI, --dpi DPI   
+  
+                        value of the image dpi, default 400
+  
+
   
