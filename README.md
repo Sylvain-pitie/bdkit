@@ -22,23 +22,23 @@ When you have your results, you can generate using VASPKIT, the data needed for 
 
 For band at the PBE level you have to use the next commands:
 
-vaspkit -task 211 -file POSCAR
+        vaspkit -task 211 -file POSCAR
 
-vaspkit -task 213 -file POSCAR
+        vaspkit -task 213 -file POSCAR
 
 For band at the metaGGA or hybrid functional level:
 
-vaspkit -task 303 -file POSCAR
+      vaspkit -task 303 -file POSCAR
 
-vaspkit -task 252 -file POSCAR
+      vaspkit -task 252 -file POSCAR
 
-vaspkit -task 254 -file POSCAR
+      vaspkit -task 254 -file POSCAR
 
 For dos at all level:
 
-vaspkit -task 111 -file POSCAR
+      vaspkit -task 111 -file POSCAR
 
-vaspkit -task 113 -file POSCAR
+      vaspkit -task 113 -file POSCAR
 
 These commands will generate different files.
 
