@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib import gridspec  # Importez gridspec
-
-def band2(kindatm,atm1,atm2,typeorb1,typeorb2,color1,color2,title,labelfig,yanch,emin,emax,dpi):
+from matplotlib.ticker import StrMethodFormatter
+def band2(kindatm,atm1,atm2,typeorb1,typeorb2,color1,color2,title,labelfig,xanch,yanch,fsize,xrot,emin,emax,dpi):
 #python3 ../band_plot.py 2 N "p" "green" Pb "s,p" "blue,red" '' '(a)' 0.5
     colonne1 = []
     colonne2 = []
@@ -185,14 +185,14 @@ def band2(kindatm,atm1,atm2,typeorb1,typeorb2,color1,color2,title,labelfig,yanch
         plt.axvline(x=coord_x, color='black', zorder=3)
 
     # Personnalisez les marques de l'axe x
-    plt.xticks(coordonnees_x, etiquettes)
+    plt.xticks(coordonnees_x, etiquettes, rotation=xrot)
 
 
     plt.xlim(min(colonne1),max(colonne1)+0.001)
     plt.ylim(emin,emax)
-    plt.ylabel("Energy (eV)",fontsize="16")
-    plt.xticks(fontsize=14)
-    plt.yticks(fontsize=14)
+    plt.ylabel("Energy (eV)",fontsize=fsize)
+    plt.xticks(fontsize=fsize)
+    plt.yticks(fontsize=fsize)
     #plt.xticks(rotation = 75)
 #    plt.legend(loc="upper right")
 
@@ -223,15 +223,17 @@ def band2(kindatm,atm1,atm2,typeorb1,typeorb2,color1,color2,title,labelfig,yanch
 
     plt.xlim(min(doscol2),maxx+1)
     plt.ylim(emin,emax)
-    plt.xlabel("DOS", fontsize="16")
+    plt.xlabel("DOS (a. u.)", fontsize=fsize)
+    plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}')) # No decimal places
+
     plt.gca().set_ylabel("")
     plt.gca().set_yticks([])
 #plt.ylabel("Energy (eV)")
-    plt.suptitle(title, y=0.98, fontsize="16")
-    plt.legend(loc="upper right",fontsize="14",bbox_to_anchor=(1.0, yanch),frameon=False)
-    plt.xticks(fontsize=10)
-    plt.yticks(fontsize=10)
-    fig.text(0.04, 0.95, labelfig, fontsize=15)
-    plt.subplots_adjust(top=0.94, bottom=0.10, left=0.12, right=0.98,wspace=0.1)
+    plt.suptitle(title, y=0.98, fontsize=fsize)
+    plt.legend(loc="upper right",fontsize=fsize,bbox_to_anchor=(xanch, yanch),frameon=False)
+    plt.xticks(fontsize=fsize)
+    plt.yticks(fontsize=fsize)
+    fig.text(0.01, 0.96, labelfig, fontsize=22)
+    plt.subplots_adjust(top=0.96, bottom=0.11, left=0.12, right=0.98,wspace=0.15)
 
     plt.savefig(atm1+atm2+"bandplot.png", format="png", dpi=dpi)

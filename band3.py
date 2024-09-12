@@ -5,7 +5,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib import gridspec  # Importez gridspec
 
-def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3,title,labelfig,yanch,emin,emax,dpi):
+def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3,title,labelfig,xanch,yanch,fsize,xrot,emin,emax,dpi):
 ###########Lecture des datas nécessaires au tracés des bandes######################
 ###############Lecture de la structures de bandes totales##########################
     colonne1 = []
@@ -233,14 +233,14 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
         plt.axvline(x=coord_x, color='black', zorder=3)
 
     # Personnalisez les marques de l'axe x
-    plt.xticks(coordonnees_x, etiquettes)
+    plt.xticks(coordonnees_x, etiquettes, rotation=xrot)
 
 
     plt.xlim(min(colonne1),max(colonne1)+0.001)
     plt.ylim(emin,emax)
-    plt.ylabel("Energy (eV)", fontsize=16)
-    plt.xticks(fontsize=14)
-    plt.yticks(fontsize=14)
+    plt.ylabel("Energy (eV)", fontsize=fsize)
+    plt.xticks(fontsize=fsize)
+    plt.yticks(fontsize=fsize)
     plt.subplot(gs[1])  # Utilisez gs[1] pour le premier sous-tracé
     plt.plot(doscol2, doscol1, color="black", zorder=1, label="TDOS")
     plt.fill_between(doscol2, doscol1, color='gray', alpha=0.8)
@@ -275,13 +275,15 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
 
     plt.xlim(min(doscol2),maxx+1)
     plt.ylim(emin,emax)
-    plt.xlabel("DOS",fontsize=16)
+    plt.xlabel("DOS (a. u.)",fontsize=fsize)
+    plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}')) # No decimal places
+
     plt.gca().set_ylabel("")
     plt.gca().set_yticks([])
-    plt.suptitle(title, y=0.98, fontsize="16")
-    plt.legend(loc="upper right",fontsize="14",bbox_to_anchor=(1.0, yanch),frameon=False)
-    plt.xticks(fontsize=10)
-    plt.yticks(fontsize=10)
-    fig.text(0.04, 0.95, labelfig, fontsize=15)
-    plt.subplots_adjust(top=0.94, bottom=0.10, left=0.12, right=0.98,wspace=0.1)
+    plt.suptitle(title, y=0.98, fontsize=fsize)
+    plt.legend(loc="upper right",fontsize=fsize,bbox_to_anchor=(xanch, yanch),frameon=False)
+    plt.xticks(fontsize=fsize)
+    plt.yticks(fontsize=fsize)
+    fig.text(0.01, 0.96, labelfig, fontsize=22)
+    plt.subplots_adjust(top=0.96, bottom=0.11, left=0.12, right=0.98,wspace=0.15)
     plt.savefig(atm1+atm2+atm3+"bandplot.png", format="png", dpi=dpi)
