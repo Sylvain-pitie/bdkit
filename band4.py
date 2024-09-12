@@ -343,6 +343,6 @@ def band4(kindatm,atm1,atm2,atm3,atm4,typeorb1,typeorb2,typeorb3,typeorb4,color1
     plt.legend(loc="upper right",fontsize=fsize,bbox_to_anchor=(xanch, yanch),frameon=False)
     plt.xticks(fontsize=fsize)
     plt.yticks(fontsize=fsize)
-    fig.text(0.01, 0.96, labelfig, fontsize=22)
-    plt.subplots_adjust(top=0.96, bottom=0.11, left=0.12, right=0.98,wspace=0.15)
+    fig.text(0.01, 0.95, labelfig, fontsize=22)
+    plt.subplots_adjust(top=0.93, bottom=0.11, left=0.12, right=0.98,wspace=0.15)
     plt.savefig(atm1+atm2+"bandplot.png", format="png", dpi=dpi)
