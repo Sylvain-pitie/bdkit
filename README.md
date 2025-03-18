@@ -4,9 +4,9 @@ Python tool interface with VASPkit. This allow you to plot band and DOS.
 In order to use this tool you have to install:
 Vaspkit: https://vaspkit.com/
 
-Python3, Matplolib, Numpy and Pandas
+Python3, Matplolib, Numpy, Scipy and Pandas
 
-                pip3 install numpy pandas matplotlib 
+                pip3 install numpy pandas matplotlib scipy
 
 Then you need the file generate by vaspkit.
 
