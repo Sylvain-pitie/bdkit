@@ -2,8 +2,10 @@ import sys
 import os
 import numpy as np
 import pandas as pd
+from scipy.interpolate import interp1d
 from matplotlib import pyplot as plt
 from matplotlib import gridspec  # Importez gridspec
+from matplotlib.ticker import StrMethodFormatter
 
 def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3,title,labelfig,xanch,yanch,fsize,xrot,emin,emax,dpi):
 ###########Lecture des datas nécessaires au tracés des bandes######################
@@ -47,6 +49,8 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
     donnees["Sommed"] = donnees["Colonne7"] + donnees["Colonne8"] + donnees["Colonne9"] + donnees["Colonne10"] + donnees["Colonne11"]
     donnees["Sommed"] = donnees["Sommed"] * 10
     rawd1 = donnees["Sommed"].tolist()
+    donnees["Sommet"] = donnees["Colonne3"] + donnees["Somme"] + donnees["Sommed"]
+    rawt1 = donnees["Sommet"].tolist()
 #########Lecture de la structure de bandes projeté sur N###########################
 # Définissez le nom de votre fichier
 
@@ -70,6 +74,8 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
     donnees["Sommed"] = donnees["Colonne7"] + donnees["Colonne8"] + donnees["Colonne9"] + donnees["Colonne10"] + donnees["Colonne11"]
     donnees["Sommed"] = donnees["Sommed"] * 10
     rawd2 = donnees["Sommed"].tolist()
+    donnees["Sommet"] = donnees["Colonne3"] + donnees["Somme"] + donnees["Sommed"]
+    rawt2 = donnees["Sommet"].tolist()
 #########Lecture de la structure de bandes projeté sur N###########################
 # Définissez le nom de votre fichier
 
@@ -93,6 +99,8 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
     donnees["Sommed"] = donnees["Colonne7"] + donnees["Colonne8"] + donnees["Colonne9"] + donnees["Colonne10"] + donnees["Colonne11"]
     donnees["Sommed"] = donnees["Sommed"] * 10
     rawd3 = donnees["Sommed"].tolist()
+    donnees["Sommet"] = donnees["Colonne3"] + donnees["Somme"] + donnees["Sommed"]
+    rawt3 = donnees["Sommet"].tolist()
 
 
 ##########################################################################################
@@ -126,6 +134,7 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
             # Si la conversion échoue, ignorez cette ligne
                 continue
     etiquettes = [label.replace("GAMMA", "$\Gamma$") for label in etiquettes]
+    etiquettes = [label.replace("DELTA", "$\Delta$") for label in etiquettes]
     etiquettes = [label.replace("_2", "$_2$") for label in etiquettes]
     etiquettes = [label.replace("_0", "$_0$") for label in etiquettes]
     etiquettes = [label.replace("_1", "$_1$") for label in etiquettes]
@@ -140,8 +149,8 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
 # Renommez les colonnes si nécessaire
     TDdos.columns = ["Colonne1", "Colonne2"]
 # Convertissez les données en listes
-    doscol1 = TDdos["Colonne1"].tolist()
-    doscol2 = TDdos["Colonne2"].tolist()
+    doscol1tmp = TDdos["Colonne1"].tolist()
+    doscol2tmp = TDdos["Colonne2"].tolist()
 
 #########Lecture de la structure de bandes projeté sur N###########################
 # Définissez le nom de votre fichier
@@ -155,12 +164,15 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
     ndos.columns = ["Colonne1", "Colonne2", "Colonne3", "Colonne4", "Colonne5","Colonne6", "Colonne7", "Colonne8", "Colonne9", "Colonne10"]
 
 # Convertissez les données en listes
-    dos1 = ndos["Colonne1"].tolist()
-    doss1 = ndos["Colonne2"].tolist()
+    dos1tmp = ndos["Colonne1"].tolist()
+    doss1tmp = ndos["Colonne2"].tolist()
     ndos["Somme"] = ndos["Colonne3"] + ndos["Colonne4"] + ndos["Colonne5"]
-    dosp1 = ndos["Somme"].tolist()
-    ndos["Somme"] = ndos["Colonne6"] + ndos["Colonne7"] + ndos["Colonne8"] + ndos["Colonne9"] + ndos["Colonne10"]
-    dosd1 = ndos["Somme"].tolist()
+    dosp1tmp = ndos["Somme"].tolist()
+    ndos["Sommed"] = ndos["Colonne6"] + ndos["Colonne7"] + ndos["Colonne8"] + ndos["Colonne9"] + ndos["Colonne10"]
+    dosd1tmp = ndos["Sommed"].tolist()
+    ndos["Sommet"] = ndos["Colonne2"] + ndos["Somme"] + ndos["Sommed"]
+    dost1tmp = ndos["Sommet"].tolist()
+
 
 #########Lecture de la structure de bandes projeté sur N###########################
 # Définissez le nom de votre fichier
@@ -174,12 +186,14 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
     ndos.columns = ["Colonne1", "Colonne2", "Colonne3", "Colonne4", "Colonne5","Colonne6", "Colonne7", "Colonne8", "Colonne9", "Colonne10"]
 
 # Convertissez les données en listes
-    dos1 = ndos["Colonne1"].tolist()
-    doss2 = ndos["Colonne2"].tolist()
+    dos1tmp = ndos["Colonne1"].tolist()
+    doss2tmp = ndos["Colonne2"].tolist()
     ndos["Somme"] = ndos["Colonne3"] + ndos["Colonne4"] + ndos["Colonne5"]
-    dosp2 = ndos["Somme"].tolist()
-    ndos["Somme"] = ndos["Colonne6"] + ndos["Colonne7"] + ndos["Colonne8"] + ndos["Colonne9"] + ndos["Colonne10"]
-    dosd2 = ndos["Somme"].tolist()
+    dosp2tmp = ndos["Somme"].tolist()
+    ndos["Sommed"] = ndos["Colonne6"] + ndos["Colonne7"] + ndos["Colonne8"] + ndos["Colonne9"] + ndos["Colonne10"]
+    dosd2tmp = ndos["Sommed"].tolist()
+    ndos["Sommet"] = ndos["Colonne2"] + ndos["Somme"] + ndos["Sommed"]
+    dost2tmp = ndos["Sommet"].tolist()
 #########Lecture de la structure de bandes projeté sur N###########################
 # Définissez le nom de votre fichier
     ndosfile = "./dos/PDOS_"+atm3+".dat"
@@ -192,14 +206,62 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
     ndos.columns = ["Colonne1", "Colonne2", "Colonne3", "Colonne4", "Colonne5","Colonne6", "Colonne7", "Colonne8", "Colonne9", "Colonne10"]
 
 # Convertissez les données en listes
-    dos1 = ndos["Colonne1"].tolist()
-    doss3 = ndos["Colonne2"].tolist()
+    dos1tmp = ndos["Colonne1"].tolist()
+    doss3tmp = ndos["Colonne2"].tolist()
     ndos["Somme"] = ndos["Colonne3"] + ndos["Colonne4"] + ndos["Colonne5"]
-    dosp3 = ndos["Somme"].tolist()
-    ndos["Somme"] = ndos["Colonne6"] + ndos["Colonne7"] + ndos["Colonne8"] + ndos["Colonne9"] + ndos["Colonne10"]
-    dosd3 = ndos["Somme"].tolist()
-
+    dosp3tmp = ndos["Somme"].tolist()
+    ndos["Sommed"] = ndos["Colonne6"] + ndos["Colonne7"] + ndos["Colonne8"] + ndos["Colonne9"] + ndos["Colonne10"]
+    dosd3tmp = ndos["Sommed"].tolist()
+    ndos["Sommet"] = ndos["Colonne2"] + ndos["Somme"] + ndos["Sommed"]
+    dost3tmp = ndos["Sommet"].tolist()
 #######################################################################################################
+################################################interpolate############################################
+    dos1tmp = np.array(dos1tmp)
+    doss1tmp = np.array(doss1tmp)
+    dosp1tmp = np.array(dosp1tmp)
+    dosd1tmp = np.array(dosd1tmp)
+    dost1tmp = np.array(dost1tmp)
+    doss2tmp = np.array(doss2tmp)
+    dosp2tmp = np.array(dosp2tmp)
+    dosd2tmp = np.array(dosd2tmp)
+    dost2tmp = np.array(dost2tmp)
+    doss3tmp = np.array(doss3tmp)
+    dosp3tmp = np.array(dosp3tmp)
+    dosd3tmp = np.array(dosd3tmp)
+    dost3tmp = np.array(dost3tmp)
+    doscol1tmp = np.array(doscol1tmp)
+    doscol2tmp = np.array(doscol2tmp)
+
+    interpolation1s = interp1d(dos1tmp, doss1tmp, kind='cubic')
+    interpolation1p = interp1d(dos1tmp, dosp1tmp, kind='cubic')
+    interpolation1d = interp1d(dos1tmp, dosd1tmp, kind='cubic')
+    interpolation1t = interp1d(dos1tmp, dost1tmp, kind='cubic')
+    interpolation2s = interp1d(dos1tmp, doss2tmp, kind='cubic')
+    interpolation2p = interp1d(dos1tmp, dosp2tmp, kind='cubic')
+    interpolation2d = interp1d(dos1tmp, dosd2tmp, kind='cubic')
+    interpolation2t = interp1d(dos1tmp, dost2tmp, kind='cubic')
+    interpolation3s = interp1d(dos1tmp, doss3tmp, kind='cubic')
+    interpolation3p = interp1d(dos1tmp, dosp3tmp, kind='cubic')
+    interpolation3d = interp1d(dos1tmp, dosd3tmp, kind='cubic')
+    interpolation3t = interp1d(dos1tmp, dost3tmp, kind='cubic')
+    interpolationcol2 = interp1d(doscol1tmp, doscol2tmp, kind='cubic')
+
+    dos1 = np.linspace(min(dos1tmp), max(dos1tmp), 100000)
+    doscol1 = np.linspace(min(doscol1tmp), max(doscol1tmp), 100000)
+    doss1 = interpolation1s(dos1)
+    dosp1 = interpolation1p(dos1)
+    dosd1 = interpolation1d(dos1)
+    dost1 = interpolation1t(dos1)
+    doss2 = interpolation2s(dos1)
+    dosp2 = interpolation2p(dos1)
+    dosd2 = interpolation2d(dos1)
+    dost2 = interpolation2t(dos1)
+    doss3 = interpolation3s(dos1)
+    dosp3 = interpolation3p(dos1)
+    dosd3 = interpolation3d(dos1)
+    dost3 = interpolation3t(dos1)
+    doscol2 = interpolationcol2(doscol1)
+
 #######################################################################################################
     fig, ax = plt.subplots(figsize=(8, 6))
     gs = gridspec.GridSpec(1, 2, width_ratios=[2, 1])
@@ -212,6 +274,8 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
             plt.scatter(raw1,raw2, s=rawp1, facecolors='none', alpha=1.0, color=color1[f], zorder=2, label=atm1+'-p')
         elif str(typeorb1[f]) == "d":
             plt.scatter(raw1,raw2, s=rawd1, facecolors='none', alpha=1.0, color=color1[f], zorder=2, label=atm1+'-d')
+        elif str(typeorb1[f]) == "t":
+            plt.scatter(raw1,raw2, s=rawt1, facecolors='none', alpha=1.0, color=color1[f], zorder=2, label=atm1)
     for f in range(len(typeorb2)):
         if str(typeorb2[f]) == "s":
             plt.scatter(raw1,raw2, s=raws2, facecolors='none', alpha=1.0, color=color2[f], zorder=2, label=atm2+'-s')
@@ -219,6 +283,9 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
             plt.scatter(raw1,raw2, s=rawp2, facecolors='none', alpha=1.0, color=color2[f], zorder=2, label=atm2+'-p')
         elif str(typeorb2[f]) == "d":
             plt.scatter(raw1,raw2, s=rawd2, facecolors='none', alpha=1.0, color=color2[f], zorder=2, label=atm2+'-d')
+        elif str(typeorb2[f]) == "t":
+            plt.scatter(raw1,raw2, s=rawt2, facecolors='none', alpha=1.0, color=color2[f], zorder=2, label=atm2)
+
     for f in range(len(typeorb3)):
         if str(typeorb3[f]) == "s":
             plt.scatter(raw1,raw2, s=raws3, facecolors='none', alpha=1.0, color=color3[f], zorder=2, label=atm3+'-s')
@@ -226,7 +293,8 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
             plt.scatter(raw1,raw2, s=rawp3, facecolors='none', alpha=1.0, color=color3[f], zorder=2, label=atm3+'-p')
         elif str(typeorb3[f]) == "d":
             plt.scatter(raw1,raw2, s=rawd3, facecolors='none', alpha=1.0, color=color3[f], zorder=2, label=atm3+'-d')
-
+        elif str(typeorb3[f]) == "t":
+            plt.scatter(raw1,raw2, s=rawt3, facecolors='none', alpha=1.0, color=color3[f], zorder=2, label=atm3)
     plt.axhline(y=0,color="black", linestyle="dashed")
     # Ajoutez des lignes verticales aux coordonnées spécifiées
     for coord_x in coordonnees_x:
@@ -251,6 +319,9 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
             plt.plot(dosp1,dos1, color=color1[f], zorder=2, label=atm1+'-p')
         elif str(typeorb1[f]) == "d":
             plt.plot(dosd1,dos1, color=color1[f], zorder=2, label=atm1+'-d')
+        elif str(typeorb1[f]) == "t":
+            plt.plot(dost1,dos1, color=color1[f], zorder=2, label=atm1)
+
     for f in range(len(typeorb2)):
         if str(typeorb2[f]) == "s":
             plt.plot(doss2,dos1, color=color2[f], zorder=2, label=atm2+'-s')
@@ -258,6 +329,8 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
             plt.plot(dosp2,dos1, color=color2[f], zorder=2, label=atm2+'-p')
         elif str(typeorb2[f]) == "d":
             plt.plot(dosd2,dos1, color=color2[f], zorder=2, label=atm2+'-d')
+        elif str(typeorb2[f]) == "t":
+            plt.plot(dost2,dos1, color=color2[f], zorder=2, label=atm2)
     for f in range(len(typeorb3)):
         if str(typeorb3[f]) == "s":
             plt.plot(doss3,dos1, color=color3[f], zorder=2, label=atm3+'-s')
@@ -265,6 +338,8 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
             plt.plot(dosp3,dos1, color=color3[f], zorder=2, label=atm3+'-p')
         elif str(typeorb3[f]) == "d":
             plt.plot(dosd3,dos1, color=color3[f], zorder=2, label=atm3+'-d') 
+        elif str(typeorb3[f]) == "t":
+            plt.plot(dost3,dos1, color=color3[f], zorder=2, label=atm3)
     plt.axhline(y=0,color="black", linestyle="dashed")
 
     maxx = 0
@@ -273,7 +348,7 @@ def band3(kindatm,atm1,atm2,atm3,typeorb1,typeorb2,typeorb3,color1,color2,color3
             if doscol2[i] > maxx:
                 maxx = doscol2[i]
 
-    plt.xlim(min(doscol2),maxx+1)
+    plt.xlim(0,maxx+1)
     plt.ylim(emin,emax)
     plt.xlabel("DOS (a. u.)",fontsize=fsize)
     plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}')) # No decimal places
