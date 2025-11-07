@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+import sys
+import os
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+from matplotlib import gridspec
+from band_generic import band_generic  # Import de la fonction générique
+import argparse
+
+parser = argparse.ArgumentParser(prog='BDkit2.0')
+parser.add_argument("kindatm", type=int, help="number of the different elements in your compound")
+parser.add_argument("typeatm", type=str, help="name of the elements in this way 'N,O'")
+parser.add_argument("typeorb", type=str, help="label of the orbitals in this way 's,p;d'")
+parser.add_argument("colors", type=str, help="color of the orbitals, same length as the typeorb, 'blue,red;green'")
+parser.add_argument("-t", "--title", type=str, default="", help="title of the figure, default nothing")
+parser.add_argument("-lf", "--labelfig", type=str, default="", help="label of the figure, default nothing")
+parser.add_argument("-xl", "--xlegend", type=float, default=1.1, help="x position of the legend, default 1.1")
+parser.add_argument("-yl", "--ylegend", type=float, default=0.95, help="y position of the legend, default 0.95")
+parser.add_argument("-fsize", "--fontsize", type=int, default=19, help="font size, default 19")
+parser.add_argument("-xrot", "--xrotation", type=int, default=0, help="rotation of the k-path, default 0")
+parser.add_argument("-emin", "--emin", type=float, default=-8.0, help="minimum energie, default -8.0")
+parser.add_argument("-emax", "--emax", type=float, default=6.0, help="maximum energie, default 6.0")
+parser.add_argument("-dpi", "--dpi", type=int, default=400, help="value of the image dpi, default 400")
+parser.add_argument("-pformat", "--pformat", type=str, default='png', help="figure format, default png")
+args = parser.parse_args()
+
+# Parsing des arguments
+typeorb = []
+colors = []
+typeatm = list(args.typeatm.split(','))
+tmporb = list(args.typeorb.split(';'))
+
+for orbs in tmporb:
+    typeorb.append(list(orbs.split(',')))
+
+tmpcolor = list(args.colors.split(';'))
+for color in tmpcolor:
+    colors.append(list(color.split(',')))
+
+# Vérification de la cohérence des arguments
+if len(typeatm) != args.kindatm:
+    print(f"Erreur: Le nombre d'atomes spécifié ({args.kindatm}) ne correspond pas au nombre d'atomes fournis ({len(typeatm)})")
+    sys.exit(1)
+
+if len(typeorb) != args.kindatm:
+    print(f"Erreur: Le nombre de listes d'orbitales ({len(typeorb)}) ne correspond pas au nombre d'atomes ({args.kindatm})")
+    sys.exit(1)
+
+if len(colors) != args.kindatm:
+    print(f"Erreur: Le nombre de listes de couleurs ({len(colors)}) ne correspond pas au nombre d'atomes ({args.kindatm})")
+    sys.exit(1)
+
+# Vérification que chaque atome a le même nombre d'orbitales et de couleurs
+for i in range(args.kindatm):
+    if len(typeorb[i]) != len(colors[i]):
+        print(f"Erreur: L'atome {typeatm[i]} a {len(typeorb[i])} orbitales mais {len(colors[i])} couleurs")
+        sys.exit(1)
+
+# Appel de la fonction générique pour n'importe quel nombre d'atomes
+band_generic(
+    atoms=typeatm,
+    typeorbs=typeorb,
+    colors=colors,
+    title=args.title,
+    labelfig=args.labelfig,
+    xanch=args.xlegend,
+    yanch=args.ylegend,
+    fsize=args.fontsize,
+    xrot=args.xrotation,
+    emin=args.emin,
+    emax=args.emax,
+    dpi=args.dpi,
+    pformat=args.pformat
+)
+
+print(f"Graphique généré avec succès pour {args.kindatm} atome(s): {', '.join(typeatm)}")
