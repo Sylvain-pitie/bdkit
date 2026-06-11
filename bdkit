@@ -23,6 +23,8 @@ parser.add_argument("-emin", "--emin", type=float, default=-8.0, help="minimum e
 parser.add_argument("-emax", "--emax", type=float, default=6.0, help="maximum energie, default 6.0")
 parser.add_argument("-dpi", "--dpi", type=int, default=400, help="value of the image dpi, default 400")
 parser.add_argument("-pformat", "--pformat", type=str, default='png', help="figure format, default png")
+parser.add_argument("-seuil", "--seuil", type=float, default=0.5, help="taille mini des marqueurs scatter traces (filtre SVG), default 0.5")
+parser.add_argument("-ndos", "--ndos", type=int, default=2000, help="nb de points d'interpolation des DOS, default 2000")
 args = parser.parse_args()
 
 # Parsing des arguments
@@ -71,7 +73,9 @@ band_generic(
     emin=args.emin,
     emax=args.emax,
     dpi=args.dpi,
-    pformat=args.pformat
+    pformat=args.pformat,
+    seuil=args.seuil,
+    ndos=args.ndos
 )
 
 print(f"Graphique généré avec succès pour {args.kindatm} atome(s): {', '.join(typeatm)}")

@@ -1,17 +1,3 @@
-#!/usr/bin/env python3
-"""
-BDkit2.0 — Plot band structure and DOS for any compound.
-
-Usage example:
-    ./BDkit2.0 2 "Pb,O" "s,p;d" "blue,red;green" -t "PbO Bands" -lf "(a)"
-
-see: https://github.com/Sylvain-pitie/bdkit
-
-Author: Sylvain Pitie
-
-Updated 12/10/2025 by Morgan Redington
-"""
-
 import sys
 import os
 import numpy as np
@@ -20,238 +6,324 @@ from scipy.interpolate import interp1d
 from matplotlib import pyplot as plt
 from matplotlib import gridspec
 from matplotlib.ticker import StrMethodFormatter
-import argparse
+from matplotlib.ticker import MaxNLocator
 
+def band_generic(atoms, typeorbs, colors, title, labelfig, xanch, yanch, fsize, xrot,
+                 emin, emax, dpi, pformat, seuil=0.5, ndos=2000):
+    """
+    Fonction généraliste pour tracer les structures de bandes pour n'importe quel nombre d'atomes
 
-# ==========================================================
-# ================   BAND + DOS UTILITIES   ================
-# ==========================================================
+    Args:
+        atoms: liste des noms d'atomes ['N', 'Pb', 'O', ...]
+        typeorbs: liste des listes d'orbitales [['p'], ['s','p'], ['d'], ...]
+        colors: liste des listes de couleurs [['green'], ['blue','red'], ['orange'], ...]
+        title: titre du graphique
+        labelfig: label de la figure
+        xanch, yanch: position de la légende
+        fsize: taille de police
+        xrot: rotation des labels k-path
+        emin, emax: limites en énergie
+        dpi: résolution de l'image
+        pformat: plot format
+        seuil: taille minimale d'un marqueur scatter pour être tracé (filtre les
+               points à contribution quasi nulle, invisibles mais très lourds en SVG)
+        ndos: nombre de points pour l'interpolation des DOS (2000 suffit visuellement,
+              100000 rendait le SVG énorme)
+    """
 
-def read_band_data(filepath):
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"Missing band data file: {filepath}")
-    k_points, energies = np.loadtxt(filepath, unpack=True, comments='#')
-    return k_points, energies
+    # Important pour SVG : texte conservé en vrai texte éditable (pas de chemins)
+    # et marqueurs scatter référencés via <use> (un seul symbole défini, réutilisé)
+    if pformat == "svg":
+        plt.rcParams['svg.fonttype'] = 'none'
 
+    # Lecture des données de bande principale
+    colonne1 = []
+    colonne2 = []
 
-def read_pband(filepath):
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"Missing projected band data file: {filepath}")
+    with open("./band/BAND.dat", "r") as fichier:
+        lignes = fichier.readlines()
 
-    df = pd.read_csv(filepath, delim_whitespace=True, skiprows=3, comment='#')
-    df.columns = [f"C{i}" for i in range(1, len(df.columns) + 1)]
+    for ligne in lignes:
+        if ligne.startswith('#'):
+            continue
+        valeurs = ligne.strip().split()
+        if len(valeurs) >= 2:
+            valeur1, valeur2 = map(float, valeurs[:2])
+            colonne1.append(valeur1)
+            colonne2.append(valeur2)
+        else:
+            # Ligne vide entre deux bandes : on insère un NaN pour couper le
+            # tracé et éviter les lignes verticales parasites entre bandes
+            if colonne1 and not np.isnan(colonne2[-1]):
+                colonne1.append(colonne1[-1])
+                colonne2.append(np.nan)
 
-    k_points = df["C1"].to_numpy()
-    energies = df["C2"].to_numpy()
+    colonne1 = np.array(colonne1)
+    colonne2 = np.array(colonne2)
 
-    s = df["C3"] * 10
-    p = (df["C4"] + df["C5"] + df["C6"]) * 10
-    d = (df["C7"] + df["C8"] + df["C9"] + df["C10"] + df["C11"]) * 10
-    total = s + p + d
+    # Stockage des données projetées pour chaque atome
+    atoms_data = {}
 
-    return {"k": k_points, "E": energies, "s": s, "p": p, "d": d, "t": total}
+    # Lecture des données projetées pour chaque atome
+    for atom in atoms:
+        nom_fichier = f"./band/PBAND_{atom}.dat"
 
+        # Lecture des données de bande projetées
+        donnees = pd.read_csv(nom_fichier, sep=r'\s+',
+                             usecols=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                             skiprows=3, comment='#')
 
-def read_k_labels(filepath):
-    labels, coords = [], []
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"Missing KLABELS file: {filepath}")
+        donnees.columns = ["Colonne1", "Colonne2", "Colonne3", "Colonne4",
+                          "Colonne5", "Colonne6", "Colonne7", "Colonne8",
+                          "Colonne9", "Colonne10", "Colonne11"]
 
-    with open(filepath) as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) < 2:
-                continue
+        # Extraction des coordonnées k et énergies (en numpy pour le filtrage)
+        raw1 = donnees["Colonne1"].to_numpy()
+        raw2 = donnees["Colonne2"].to_numpy()
+
+        # Calcul des contributions orbitales
+        raws = (donnees["Colonne3"] * 10).to_numpy()  # s orbital
+
+        somme_p = (donnees["Colonne4"] + donnees["Colonne5"] + donnees["Colonne6"]) * 10
+        rawp = somme_p.to_numpy()  # p orbitals
+
+        somme_d = (donnees["Colonne7"] + donnees["Colonne8"] +
+                   donnees["Colonne9"] + donnees["Colonne10"] +
+                   donnees["Colonne11"]) * 10
+        rawd = somme_d.to_numpy()  # d orbitals
+
+        rawt = raws + rawp + rawd  # total
+
+        atoms_data[atom] = {
+            'raw1': raw1,
+            'raw2': raw2,
+            'raws': raws,
+            'rawp': rawp,
+            'rawd': rawd,
+            'rawt': rawt
+        }
+
+    # Lecture des labels k-path
+    with open("./band/KLABELS", "r") as fichier:
+        lignes = fichier.readlines()
+
+    etiquettes = []
+    coordonnees_x = []
+
+    for ligne in lignes:
+        ligne = ligne.strip()
+        if not ligne:
+            continue
+
+        mots = ligne.split()
+        if len(mots) >= 2:
             try:
-                coord = float(parts[1])
+                coordonnee = float(mots[1])
+                etiquettes.append(mots[0])
+                coordonnees_x.append(coordonnee)
             except ValueError:
                 continue
-            labels.append(parts[0])
-            coords.append(coord)
 
+    # Formatage des labels k-path
     replacements = {
-        "GAMMA": "$\\Gamma$", "DELTA": "$\\Delta$", "SIGMA": "$\\Sigma$",
-        "_0": "$_0$", "_1": "$_1$", "_2": "$_2$", "+": " ", "-": " "
+        "GAMMA": "$\\Gamma$",
+        "DELTA": "$\\Delta$",
+        "SIGMA": "$\\Sigma$",
+        "_2": "$_2$",
+        "_0": "$_0$",
+        "_1": "$_1$",
+        "+": "  ",
+        "-": "  "
     }
+
     for old, new in replacements.items():
-        labels = [lbl.replace(old, new) for lbl in labels]
+        etiquettes = [label.replace(old, new) for label in etiquettes]
 
-    return labels, coords
+    # Lecture des DOS
+    # TDOS
+    tdosfile = "./dos/TDOS.dat"
+    TDdos = pd.read_csv(tdosfile, sep=r'\s+', usecols=[0, 1],
+                       skiprows=1, comment='#')
+    TDdos.columns = ["Colonne1", "Colonne2"]
+    doscol1tmp = np.array(TDdos["Colonne1"].tolist())
+    doscol2tmp = np.array(TDdos["Colonne2"].tolist())
 
+    # PDOS pour chaque atome
+    atoms_dos = {}
 
-def read_dos(filepath):
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"Missing TDOS file: {filepath}")
-    df = pd.read_csv(filepath, delim_whitespace=True, skiprows=1, comment='#')
-    df.columns = ["E", "DOS"]
-    return df["E"].to_numpy(), df["DOS"].to_numpy()
+    for atom in atoms:
+        ndosfile = f"./dos/PDOS_{atom}.dat"
 
+        ndos_df = pd.read_csv(ndosfile, sep=r'\s+',
+                          usecols=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                          skiprows=1, comment='#')
 
-def read_pdos(filepath):
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"Missing PDOS file: {filepath}")
-    df = pd.read_csv(filepath, delim_whitespace=True, skiprows=1, comment='#')
-    df.columns = [f"C{i}" for i in range(1, len(df.columns) + 1)]
+        ndos_df.columns = ["Colonne1", "Colonne2", "Colonne3", "Colonne4",
+                       "Colonne5", "Colonne6", "Colonne7", "Colonne8",
+                       "Colonne9", "Colonne10"]
 
-    E = df["C1"].to_numpy()
-    s = df["C2"]
-    p = (df["C3"] + df["C4"] + df["C5"])
-    d = (df["C6"] + df["C7"] + df["C8"] + df["C9"] + df["C10"])
-    total = s + p + d
-    return {"E": E, "s": s, "p": p, "d": d, "t": total}
+        dos1tmp = ndos_df["Colonne1"].to_numpy()
+        doss = ndos_df["Colonne2"].to_numpy()  # s DOS
 
+        dosp = (ndos_df["Colonne3"] + ndos_df["Colonne4"] + ndos_df["Colonne5"]).to_numpy()  # p DOS
 
-def interpolate_dos(dos_dict, num_points=100000):
-    E_lin = np.linspace(min(dos_dict["E"]), max(dos_dict["E"]), num_points)
-    interp = {
-        orb: interp1d(dos_dict["E"], dos_dict[orb], kind='cubic')(E_lin)
-        for orb in ["s", "p", "d", "t"]
-    }
-    interp["E"] = E_lin
-    return interp
+        dosd = (ndos_df["Colonne6"] + ndos_df["Colonne7"] +
+                ndos_df["Colonne8"] + ndos_df["Colonne9"] + ndos_df["Colonne10"]).to_numpy()  # d DOS
 
+        dost = doss + dosp + dosd  # total DOS
 
-def band_generic(
-    atoms, typeorbs, colors,
-    title, labelfig,
-    xanch, yanch,
-    fsize=14, xrot=0,
-    emin=-5, emax=5,
-    dpi=300, pformat="png",
-    band_dir="./band", dos_dir="./dos"
-):
+        atoms_dos[atom] = {
+            'dos1': dos1tmp,
+            'doss': doss,
+            'dosp': dosp,
+            'dosd': dosd,
+            'dost': dost
+        }
 
-    # --- Load band data ---
-    k_points, energies = read_band_data(os.path.join(band_dir, "BAND.dat"))
-    k_labels, k_coords = read_k_labels(os.path.join(band_dir, "KLABELS"))
-    atom_band_data = {
-        atom: read_pband(os.path.join(band_dir, f"PBAND_{atom}.dat"))
-        for atom in atoms
-    }
+    # Interpolation TDOS
+    # NB: ndos points (défaut 2000) au lieu de 100000 -> SVG ~50x plus léger,
+    # rendu strictement identique à l'écran et à l'impression
+    interpolationcol2 = interp1d(doscol1tmp, doscol2tmp, kind='cubic')
+    doscol1 = np.linspace(doscol1tmp.min(), doscol1tmp.max(), ndos)
+    doscol2 = interpolationcol2(doscol1)
 
-    # --- Load DOS data ---
-    E_tdos, tdos = read_dos(os.path.join(dos_dir, "TDOS.dat"))
-    atom_dos_data = {
-        atom: interpolate_dos(read_pdos(os.path.join(dos_dir, f"PDOS_{atom}.dat")))
-        for atom in atoms
-    }
+    # Interpolation pour chaque atome
+    atoms_dos_interp = {}
 
-    # --- Plot setup ---
-    fig = plt.figure(figsize=(8, 6))
+    for atom in atoms:
+        dos_data = atoms_dos[atom]
+        dos1tmp = dos_data['dos1']
+
+        dos1 = np.linspace(dos1tmp.min(), dos1tmp.max(), ndos)
+        doss = interp1d(dos1tmp, dos_data['doss'], kind='cubic')(dos1)
+        dosp = interp1d(dos1tmp, dos_data['dosp'], kind='cubic')(dos1)
+        dosd = interp1d(dos1tmp, dos_data['dosd'], kind='cubic')(dos1)
+        dost = interp1d(dos1tmp, dos_data['dost'], kind='cubic')(dos1)
+
+        atoms_dos_interp[atom] = {
+            'dos1': dos1,
+            'doss': doss,
+            'dosp': dosp,
+            'dosd': dosd,
+            'dost': dost
+        }
+
+    # Création du graphique
+    fig, ax = plt.subplots(figsize=(8, 6))
     gs = gridspec.GridSpec(1, 2, width_ratios=[2, 1])
-    plt.subplots_adjust(top=0.93, bottom=0.11, left=0.12, right=0.98, wspace=0.16)
 
-    # --- Band structure ---
-    ax1 = plt.subplot(gs[0])
+    # Subplot 1: Structure de bandes
+    plt.subplot(gs[0])
+    lignes_bandes, = plt.plot(colonne1, colonne2, color="gray", zorder=1)
+    lignes_bandes.set_gid("bandes_grises")  # groupe nommé dans le SVG
 
-    # Plot the bands in black
-    ax1.plot(k_points, energies, color="black", zorder=1)
+    # Marge en énergie pour le filtrage (les marqueurs un peu hors cadre
+    # peuvent encore déborder visuellement dans la fenêtre)
+    marge = 0.5 * (emax - emin) * 0.05 + 0.3
 
-    # Plot ALL projected scatter points in black as well
-    for atom, orbs, cols in zip(atoms, typeorbs, colors):
-        data = atom_band_data[atom]
-        for orb in orbs:
-            ax1.scatter(
-                data["k"], data["E"],
-                s=data[orb],
-                facecolors='none',
-                color="black",
-                alpha=1.0
-             )
+    # Tracé des contributions pour chaque atome
+    for i, atom in enumerate(atoms):
+        atom_data = atoms_data[atom]
+        typeorb = typeorbs[i]
+        color = colors[i]
 
-    for x in k_coords:
-        ax1.axvline(x=x, color="black", lw=0.8)
-    ax1.axhline(y=0, color="black", ls="--")
-    ax1.set_ylim(emin, emax)
-    ax1.set_xlim(min(k_points), max(k_points))
-    ax1.set_ylabel("Energy (eV)", fontsize=fsize)
-    ax1.set_xticks(k_coords)
-    ax1.set_xticklabels(k_labels, rotation=xrot, fontsize=fsize)
-    ax1.tick_params(labelsize=fsize)
+        k = atom_data['raw1']
+        E = atom_data['raw2']
+        # Masque énergie : on ne garde que les points dans la fenêtre tracée
+        mask_E = (E >= emin - marge) & (E <= emax + marge)
 
-    # --- DOS subplot ---
-    ax2 = plt.subplot(gs[1])
-    ax2.plot(tdos, E_tdos, color="black", label="TDOS")
-    ax2.fill_between(tdos, E_tdos, color="gray", alpha=0.4)
+        orb_map = {"s": ('raws', f'{atom}-s'),
+                   "p": ('rawp', f'{atom}-p'),
+                   "d": ('rawd', f'{atom}-d'),
+                   "t": ('rawt', f'{atom}')}
 
-    # ✅ MODIFIED LEGEND LOGIC HERE
-    for atom, orbs, cols in zip(atoms, typeorbs, colors):
-        data = atom_dos_data[atom]
-        species_only = set(orbs) == {"t"}
+        for j, orb_type in enumerate(typeorb):
+            if orb_type not in orb_map:
+                continue
+            key, lab = orb_map[orb_type]
+            taille = atom_data[key]
 
-        for orb, c in zip(orbs, cols):
-            label = atom if species_only else f"{atom}-{orb}"
-            ax2.plot(data[orb], data["E"], color=c, label=label)
+            # Masque taille : on élimine les marqueurs quasi invisibles
+            # (contribution ~0) qui alourdissent énormément le SVG
+            mask = mask_E & (taille >= seuil)
 
-    ax2.axhline(y=0, color="black", ls="--")
-    ax2.set_ylim(emin, emax)
-    ax2.set_xlabel("DOS (a.u.)", fontsize=fsize)
-    ax2.set_yticks([])
-    ax2.xaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}'))
-    ax2.legend(fontsize=fsize - 2, loc="upper right",
-               bbox_to_anchor=(xanch, yanch), frameon=False)
+            sc = plt.scatter(k[mask], E[mask],
+                             s=taille[mask], facecolors='none', alpha=0.5,
+                             color=color[j], zorder=2, label=lab)
+            # gid -> chaque famille de points devient un groupe nommé,
+            # sélectionnable d'un clic dans l'éditeur XML d'Inkscape
+            sc.set_gid(f"pband_{lab.replace('-', '_')}")
 
-    plt.suptitle(title, fontsize=fsize)
-    fig.text(0.01, 0.95, labelfig, fontsize=fsize + 6)
+    plt.axhline(y=0, color="black", linestyle="dashed")
 
-    outname = f"{''.join(atoms)}_bandplot.{pformat}"
-    plt.savefig(outname, dpi=dpi, format=pformat)
-    print(f"✅ Figure saved as: {outname}")
+    # Lignes verticales pour k-path
+    for coord_x in coordonnees_x:
+        plt.axvline(x=coord_x, color='black', zorder=3)
 
+    plt.xticks(coordonnees_x, etiquettes, rotation=xrot)
+    plt.xlim(colonne1[~np.isnan(colonne2)].min(), colonne1[~np.isnan(colonne2)].max() + 0.001)
+    plt.ylim(emin, emax)
+    plt.ylabel("Energy (eV)", fontsize=fsize)
+    plt.xticks(fontsize=fsize)
+    plt.yticks(fontsize=fsize)
 
-# ==========================================================
-# =====================   MAIN SCRIPT   =====================
-# ==========================================================
+    # Subplot 2: DOS
+    plt.subplot(gs[1])
+    tdos_line, = plt.plot(doscol2, doscol1, color="black", zorder=1, label="TDOS")
+    tdos_line.set_gid("TDOS")
+    remplissage = plt.fill_between(doscol2, doscol1, color='gray', alpha=0.8)
+    remplissage.set_gid("TDOS_fill")
 
-def main():
-    parser = argparse.ArgumentParser(prog='BDkit2.0')
-    parser.add_argument("kindatm", type=int)
-    parser.add_argument("typeatm", type=str)
-    parser.add_argument("typeorb", type=str)
-    parser.add_argument("colors", type=str)
-    parser.add_argument("-t", "--title", type=str, default="")
-    parser.add_argument("-lf", "--labelfig", type=str, default="")
-    parser.add_argument("-xl", "--xlegend", type=float, default=1.1)
-    parser.add_argument("-yl", "--ylegend", type=float, default=0.95)
-    parser.add_argument("-fsize", "--fontsize", type=int, default=19)
-    parser.add_argument("-xrot", "--xrotation", type=int, default=0)
-    parser.add_argument("-emin", "--emin", type=float, default=-8.0)
-    parser.add_argument("-emax", "--emax", type=float, default=6.0)
-    parser.add_argument("-dpi", "--dpi", type=int, default=400)
-    parser.add_argument("-pformat", "--pformat", type=str, default='png')
-    args = parser.parse_args()
+    # Tracé des DOS pour chaque atome
+    for i, atom in enumerate(atoms):
+        dos_data = atoms_dos_interp[atom]
+        typeorb = typeorbs[i]
+        color = colors[i]
 
-    typeatm = args.typeatm.split(',')
-    typeorb = [o.split(',') for o in args.typeorb.split(';')]
-    colors = [c.split(',') for c in args.colors.split(';')]
+        orb_map = {"s": ('doss', f'{atom}-s'),
+                   "p": ('dosp', f'{atom}-p'),
+                   "d": ('dosd', f'{atom}-d'),
+                   "t": ('dost', f'{atom}')}
 
-    if len(typeatm) != args.kindatm:
-        sys.exit("❌ Atom count mismatch")
-    if len(typeorb) != args.kindatm:
-        sys.exit("❌ Orbital group mismatch")
-    if len(colors) != args.kindatm:
-        sys.exit("❌ Color group mismatch")
+        for j, orb_type in enumerate(typeorb):
+            if orb_type not in orb_map:
+                continue
+            key, lab = orb_map[orb_type]
+            ligne, = plt.plot(dos_data[key], dos_data['dos1'],
+                              color=color[j], zorder=2, label=lab)
+            ligne.set_gid(f"pdos_{lab.replace('-', '_')}")
 
-    for i in range(args.kindatm):
-        if len(typeorb[i]) != len(colors[i]):
-            sys.exit(f"❌ Orbital/color mismatch for atom {typeatm[i]}")
+    plt.axhline(y=0, color="black", linestyle="dashed")
 
-    band_generic(
-        atoms=typeatm,
-        typeorbs=typeorb,
-        colors=colors,
-        title=args.title,
-        labelfig=args.labelfig,
-        xanch=args.xlegend,
-        yanch=args.ylegend,
-        fsize=args.fontsize,
-        xrot=args.xrotation,
-        emin=args.emin,
-        emax=args.emax,
-        dpi=args.dpi,
-        pformat=args.pformat
-    )
+    # Calcul de la limite x pour DOS (vectorisé)
+    fenetre = (doscol1 >= -8) & (doscol1 <= 5)
+    maxx = doscol2[fenetre].max() if fenetre.any() else doscol2.max()
 
+    plt.xlim(0, maxx + 1)
+    plt.ylim(emin, emax)
+    plt.xlabel("DOS (a. u.)", fontsize=fsize)
+    ticks = plt.gca().get_xticks()
+    filtered_ticks = [ticks[0]]
+    for t in ticks[1:]:
+        if abs(t - filtered_ticks[-1]) > 0.1:
+            filtered_ticks.append(t)
+    plt.gca().set_xticks(filtered_ticks)
+    plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}'))
+    plt.gca().set_ylabel("")
+    plt.gca().set_yticks([])
 
-if __name__ == "__main__":
-    main()
+    # Finalisation
+    plt.suptitle(title, y=0.98, fontsize=fsize)
+    plt.legend(loc="upper right", fontsize=fsize, bbox_to_anchor=(xanch, yanch), frameon=False)
+    plt.xticks(fontsize=fsize)
+    plt.yticks(fontsize=fsize)
+    fig.text(0.01, 0.95, labelfig, fontsize=22)
+    plt.subplots_adjust(top=0.93, bottom=0.11, left=0.12, right=0.98, wspace=0.15)
+
+    # Sauvegarde
+    filename = "".join(atoms) + "bandplot." + pformat
+    if pformat == "svg":
+        plt.savefig(filename, format=pformat, bbox_inches='tight')
+    else:
+        plt.savefig(filename, format=pformat, dpi=dpi)
+#    plt.show()

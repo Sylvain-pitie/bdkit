@@ -1,118 +1,155 @@
 # bdkit
-Python tool interface with VASPkit. This allow you to plot band and DOS.
 
-In order to use this tool you have to install:
-Vaspkit: https://vaspkit.com/
+**bdkit** is a Python command-line tool that interfaces with [VASPkit](https://vaspkit.com/) to plot publication-quality projected band structures and density of states (BAND + DOS) from VASP calculations, for any number of elements and any combination of orbital projections (s, p, d, total).
 
-Python3, Matplolib, Numpy, Scipy and Pandas
+![example output](example.png)
 
-                pip3 install numpy pandas matplotlib scipy
+## Features
 
-Then you need the file generate by vaspkit.
+- Combined band structure + DOS figure (2:1 layout) from VASPkit output files
+- Orbital-projected "fat bands" (scatter size ∝ orbital contribution) for an arbitrary number of elements
+- Projected DOS curves with cubic interpolation and filled total DOS
+- Automatic formatting of high-symmetry k-point labels (Γ, Δ, Σ, subscripts...)
+- Output in any Matplotlib format: `png` (default), `pdf`, `svg`, `eps`...
+- **Editor-friendly SVG export**: lightweight vector files with named groups (`pband_K_p`, `pdos_N_s`, `TDOS_fill`, ...) that can be selected, moved and reordered individually in Inkscape or Illustrator, and text kept as real editable text
 
-First make one directory name band_dos go inside and create band and dos directories and make the appropriate calculation using vaspkit.
+## Requirements
 
-When you have your results, you can generate using VASPKIT, the data needed for the plot of band and DOS.
+- [VASPkit](https://vaspkit.com/) to post-process the VASP calculations
+- Python ≥ 3.8 with NumPy, SciPy, Pandas and Matplotlib:
 
-For band at the PBE level you have to use the next commands:
+```bash
+pip3 install numpy pandas matplotlib scipy
+```
 
-        vaspkit -task 211 -file POSCAR
+## Installation
 
-        vaspkit -task 213 -file POSCAR
+Download `bdkit` and `band_generic.py`, put them in the same directory, make `bdkit` executable and add it to your `PATH`:
 
-For band at the metaGGA or hybrid functional level:
+```bash
+git clone https://github.com/Sylvain-pitie/bdkit.git
+cd bdkit
+chmod +x bdkit
+export PATH=$PATH:$(pwd)   # add this line to your ~/.bashrc to make it permanent
+```
 
-      vaspkit -task 303 -file POSCAR
+## Preparing the input files with VASPkit
 
-      vaspkit -task 252 -file POSCAR
+Create a working directory (e.g. `band_dos`) containing two subdirectories, `band` and `dos`, and run the appropriate VASP calculations inside each one.
 
-      vaspkit -task 254 -file POSCAR
+### Band structure
 
-For dos at all level:
+At the PBE level:
 
-      vaspkit -task 111 -file POSCAR
+```bash
+vaspkit -task 211 -file POSCAR
+vaspkit -task 213 -file POSCAR
+```
 
-      vaspkit -task 113 -file POSCAR
+At the metaGGA or hybrid functional level:
 
-These commands will generate different files.
+```bash
+vaspkit -task 303 -file POSCAR
+vaspkit -task 252 -file POSCAR
+vaspkit -task 254 -file POSCAR
+```
 
-For the band calculation that will generate files of each elements in your system with the information of the projected band. For the KN8 structure that will generate the files:
+### Density of states (all levels)
 
-BAND.dat    PBAND_K.dat  PBAND_N.dat 
+```bash
+vaspkit -task 111 -file POSCAR
+vaspkit -task 113 -file POSCAR
+```
 
-Where BAND.dat contain the full band structure, PBAND_K.dat contain the projection of the K element over the band structure and PBAND_N.dat contain the projection of the N element over the band structure.
+### Generated files
 
-The same kind of files will be obtain for the DOS. For the KN8 structure that will generate the files:
+For a compound such as KN₈, VASPkit generates in `band/`:
 
-PDOS_K.dat		TDOS.dat	PDOS_N.dat 
+```
+BAND.dat    KLABELS    PBAND_K.dat    PBAND_N.dat
+```
 
-Where TDOS.dat contain the full DOS, PDOS_K.dat contain the projected DOS of the K element and PDOS_N.dat contain the projected DOS of the N element.
+where `BAND.dat` contains the full band structure, `KLABELS` the high-symmetry k-point labels, and `PBAND_X.dat` the projection of element X onto the bands.
 
-Then we use these files to plot the BAND-DOS plot. For that one can use the script bdkit.
+And in `dos/`:
 
-To install the bdkit, you have to download all the files and put bdkit in your path.
+```
+TDOS.dat    PDOS_K.dat    PDOS_N.dat
+```
 
+where `TDOS.dat` contains the total DOS and `PDOS_X.dat` the projected DOS of element X.
 
-Then you can use it: 
+## Usage
 
-bdkit -h
+Run `bdkit` from the directory that contains the `band/` and `dos/` subdirectories:
 
-usage: BDkit1.0 [-h] [-t TITLE] [-lf LABELFIG] [-xl XLEGEND] [-yl YLEGEND] [-fsize FONTSIZE]
+```bash
+bdkit kindatm typeatm typeorb colors [options]
+```
 
-                [-xrot XROTATION] [-emin EMIN] [-emax EMAX] [-dpi DPI]
-                
-                kindatm typeatm typeorb colors
+### Positional arguments
 
-positional arguments:
+| Argument  | Description | Example |
+|-----------|-------------|---------|
+| `kindatm` | Number of different elements in the compound | `2` |
+| `typeatm` | Element names, comma-separated | `'K,N'` |
+| `typeorb` | Orbitals to project for each element: orbitals comma-separated, elements separated by `;`. Allowed labels: `s`, `p`, `d`, `t` (total) | `'s,p;p'` |
+| `colors`  | One color per orbital, same structure as `typeorb` | `'blue,red;green'` |
 
-  kindatm               number of the different elements in your compound
-  
-  typeatm               name of the elements in this way 'N,O'
-  
-  typeorb               label of the orbitals in this way 's,p;d
-  
-  colors                color of the orbitals, same lenght as the typeorb, 'blue,red;green'
-  
+### Optional arguments
 
-optional arguments:
+| Option | Default | Description |
+|--------|---------|-------------|
+| `-t`, `--title` | `""` | Title of the figure |
+| `-lf`, `--labelfig` | `""` | Figure label (e.g. `'(a)'`) placed in the top-left corner |
+| `-xl`, `--xlegend` | `1.1` | x position of the legend |
+| `-yl`, `--ylegend` | `0.95` | y position of the legend |
+| `-fsize`, `--fontsize` | `19` | Font size |
+| `-xrot`, `--xrotation` | `0` | Rotation of the k-path labels |
+| `-emin`, `--emin` | `-8.0` | Minimum energy (eV) |
+| `-emax`, `--emax` | `6.0` | Maximum energy (eV) |
+| `-dpi`, `--dpi` | `400` | Image resolution (raster formats only) |
+| `-pformat`, `--pformat` | `png` | Output format: `png`, `pdf`, `svg`, `eps`... |
+| `-seuil`, `--seuil` | `0.5` | Minimum scatter marker size to be drawn. Points with a near-zero orbital contribution are skipped, which drastically reduces SVG file size. Increase to `1`–`2` for even lighter files |
+| `-ndos`, `--ndos` | `2000` | Number of interpolation points for the DOS curves. 2000 is visually indistinguishable from higher values and keeps vector files small |
 
-  -h, --help            show this help message and exit
-  
-  -t TITLE, --title TITLE
-  
-                        title of the figure, default nothing
-                        
-  -lf LABELFIG, --labelfig LABELFIG
-  
-                        label of the figure, default nothing
-                        
-  -xl XLEGEND, --xlegend XLEGEND
-  
-                        x position of the legend, default 1.1
-                        
-  -yl YLEGEND, --ylegend YLEGEND
-  
-                        y position of the legend, default 0.95
-                        
-  -fsize FONTSIZE, --fontsize FONTSIZE
+### Examples
 
-                        font size, default 19
-                        
-  -xrot XROTATION, --xrotation XROTATION
-  
-                        rotation of the k-path, default 0
-                        
-  -emin EMIN, --emin EMIN
-  
-                        minimum energie, default -8.0
-                        
-  -emax EMAX, --emax EMAX
-  
-                        maximum energie, default 6.0
-                        
-  -dpi DPI, --dpi DPI   
-  
-                        value of the image dpi, default 400
-  
+Plot the K(s,p) and N(p) projected bands and DOS of KN₈, as PNG:
 
-  
+```bash
+bdkit 2 'K,N' 's,p;p' 'blue,red;green' -t 'KN8' -lf '(a)'
+```
+
+Same figure as an Inkscape-editable SVG, restricted to [-5, 5] eV:
+
+```bash
+bdkit 2 'K,N' 's,p;p' 'blue,red;green' -emin -5 -emax 5 -pformat svg
+```
+
+Total contribution per element (one color per element):
+
+```bash
+bdkit 2 'K,N' 't;t' 'blue;green' -pformat pdf
+```
+
+The output file is named `<elements>bandplot.<format>` (e.g. `KNbandplot.svg`).
+
+## Editing the SVG output in Inkscape
+
+When `-pformat svg` is used:
+
+- Every family of objects is exported as a **named group**: `bandes_grises` (gray band lines), `pband_K_s`, `pband_N_p`, ... (projected band markers), `TDOS`, `TDOS_fill`, `pdos_K_s`, ... (DOS curves).
+- Open the XML editor (`Ctrl+Shift+X`) or click an object and use *Object → Ungroup* to select a whole family at once, then move it or change its stacking order (`Page Up` / `Page Down`) when markers overlap.
+- Text is exported as real text (`svg.fonttype = 'none'`), so labels remain fully editable.
+- If the file is still too heavy for comfortable editing, increase `-seuil` and/or decrease `-ndos`.
+
+## Troubleshooting
+
+- **`FileNotFoundError: ./band/BAND.dat`** — run `bdkit` from the parent directory containing `band/` and `dos/`, not from inside them.
+- **Mismatch errors at startup** — `kindatm`, the number of element names, the number of orbital lists and the number of color lists must all be consistent (and within each element, one color per orbital).
+- **Old pandas versions** — bdkit uses `sep=r'\s+'` and is compatible with pandas 1.x, 2.x and 3.x.
+
+## License
+
+See [LICENSE](LICENSE).
