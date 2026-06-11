@@ -1,5 +1,11 @@
 # bdkit
 
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![License](https://img.shields.io/badge/License-GPL--3.0-green)
+![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-lightgrey)
+![Field](https://img.shields.io/badge/Field-Computational%20Materials%20Science-orange)
+![VASP](https://img.shields.io/badge/Works%20with-VASP%20%2B%20VASPkit-red)
+
 **bdkit** is a Python command-line tool that interfaces with [VASPkit](https://vaspkit.com/) to plot publication-quality projected band structures and density of states (BAND + DOS) from VASP calculations, for any number of elements and any combination of orbital projections (s, p, d, total).
 
 ![example output](example.png)
@@ -152,4 +158,4 @@ When `-pformat svg` is used:
 
 ## License
 
-See [LICENSE](LICENSE).
+This project is licensed under the GNU General Public License v3.0 — see the [LICENSE](LICENSE) file for details.
