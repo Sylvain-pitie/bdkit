@@ -209,7 +209,7 @@ def band_generic(atoms, typeorbs, colors, title, labelfig, xanch, yanch, fsize, 
         }
 
     # Création du graphique
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig = plt.figure(figsize=(8, 6))  # plt.subplots ajoutait un axe plein cadre (matplotlib >= 3.6 ne le supprime plus)
     gs = gridspec.GridSpec(1, 2, width_ratios=[2, 1])
 
     # Subplot 1: Structure de bandes
