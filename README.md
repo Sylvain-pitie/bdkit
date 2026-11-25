@@ -85,6 +85,21 @@ TDOS.dat    PDOS_K.dat    PDOS_N.dat
 
 where `TDOS.dat` contains the total DOS and `PDOS_X.dat` the projected DOS of element X.
 
+### Changing the energy zero (Fermi level)
+
+bdkit plots the energies exactly as VASPkit wrote them in `BAND.dat`, `PBAND_X.dat`, `TDOS.dat` and `PDOS_X.dat`. By default, VASPkit sets the Fermi level read from the VASP output to 0 eV (`SET_FERMI_ENERGY_ZERO = .TRUE.` in `~/.vaspkit`). To use another reference, for example the valence band maximum (VBM) of a semiconductor, write this energy (in eV, on the absolute VASP scale) to a `FERMI_ENERGY.in` file in **both** `band/` and `dos/`, then run the VASPkit tasks again. VASPkit then uses this value instead of the Fermi level.
+
+For example, with the VBM that VASPkit wrote to `band/BAND_GAP` (task 211 or 252, run once without `FERMI_ENERGY.in`):
+
+```bash
+VBM=$(awk -F: '/Eigenvalue of VBM/ {print $2}' band/BAND_GAP)
+for d in band dos; do printf '# energy zero (VBM)\n  %s\n' "$VBM" > $d/FERMI_ENERGY.in; done
+(cd band && vaspkit -task 252 && vaspkit -task 254)   # PBE: vaspkit -task 211 && vaspkit -task 213
+(cd dos  && vaspkit -task 111 && vaspkit -task 113)
+```
+
+Delete the two `FERMI_ENERGY.in` files and run the tasks again to return to the Fermi level from VASP.
+
 ## Usage
 
 Run `bdkit` from the directory that contains the `band/` and `dos/` subdirectories:
@@ -154,6 +169,7 @@ When `-pformat svg` is used:
 
 - **`FileNotFoundError: ./band/BAND.dat`** — run `bdkit` from the parent directory containing `band/` and `dos/`, not from inside them.
 - **Mismatch errors at startup** — `kindatm`, the number of element names, the number of orbital lists and the number of color lists must all be consistent (and within each element, one color per orbital).
+- **Extra numbers (0.0, 0.2, ... 1.0) on the axes of the band and DOS panels** — a stray full-frame axis drawn by recent Matplotlib versions (≥ 3.6), fixed in commit `0a48bdb` (November 2026). Update with `git pull`.
 - **Old pandas versions** — bdkit uses `sep=r'\s+'` and is compatible with pandas 1.x, 2.x and 3.x.
 
 ## License
